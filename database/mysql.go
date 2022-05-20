@@ -4,31 +4,32 @@ import (
 	"context"
 	"database/sql"
 
-	_ "github.com/lib/pq"
+	models "github.com/dignelidxdx/models"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-type PostgresRepository struct {
+type MySQLRepository struct {
 	db *sql.DB
 }
 
-func NewPostgresRepository(url string) (*PostgresRepository, error) {
-	db, err := sql.Open("postgres", url)
+func NewMySQLRepository(url string) (*MySQLRepository, error) {
+	db, err := sql.Open("mysql", url)
 	if err != nil {
 		return nil, err
 	}
-	return &PostgresRepository{db}, nil
+	return &MySQLRepository{db}, nil
 }
 
-func (repo *PostgresRepository) Close() {
+func (repo *MySQLRepository) Close() {
 	repo.db.Close()
 }
 
-func (repo *PostgresRepository) InsertFeed(ctx context.Context, feed *models.Feed) error {
-	_, err := repo.db.ExecContext(ctx, "INSERT INTO feeds (id, title, description) VALUES ($1, $2, $3)", feed.ID, feed.Title, feed.Description)
+func (repo *MySQLRepository) InsertFeed(ctx context.Context, feed *models.Feed) error {
+	_, err := repo.db.ExecContext(ctx, "INSERT INTO feeds (id, title, description) VALUES (?, ?, ?)", feed.ID, feed.Title, feed.Description)
 	return err
 }
 
-func (repo *PostgresRepository) ListFeeds(ctx context.Context) ([]*models.Feed, error) {
+func (repo *MySQLRepository) ListFeeds(ctx context.Context) ([]*models.Feed, error) {
 	rows, err := repo.db.QueryContext(ctx, "SELECT id, title, description, created_at FROM feeds")
 	if err != nil {
 		return nil, err
