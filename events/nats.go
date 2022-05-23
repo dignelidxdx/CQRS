@@ -77,6 +77,7 @@ func (n *NatsEventStore) OnCreatedFeed(f func(CreatedFeedMessage)) (err error) {
 
 func (n *NatsEventStore) SubscribeCreatedFeed(ctx context.Context) (<-chan CreatedFeedMessage, error) {
 	m := CreatedFeedMessage{}
+	// canal que envia la estructura de datos de mensaje
 	n.feedCreatedChan = make(chan CreatedFeedMessage, 64)
 	ch := make(chan *nats.Msg, 64)
 	var err error
@@ -87,6 +88,7 @@ func (n *NatsEventStore) SubscribeCreatedFeed(ctx context.Context) (<-chan Creat
 	go func() {
 		for {
 			select {
+			// multiplexacion del chanel
 			case msg := <-ch:
 				n.decodeMessage(msg.Data, &m)
 				n.feedCreatedChan <- m

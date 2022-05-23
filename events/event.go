@@ -6,10 +6,12 @@ import (
 	"github.com/dignelidxdx/models"
 )
 
+//Implementacion concreta para poder desacoplar y conectar con otras tecnologias
 type EventStore interface {
 	Close()
 	PublishCreatedFeed(ctx context.Context, feed *models.Feed) error
 	SubscribeCreatedFeed(ctx context.Context) (<-chan CreatedFeedMessage, error)
+	// Callback
 	OnCreatedFeed(f func(CreatedFeedMessage)) error
 }
 

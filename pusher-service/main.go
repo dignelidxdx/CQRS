@@ -10,18 +10,22 @@ import (
 
 	"github.com/dignelidxdx/events"
 	"github.com/gorilla/websocket"
-)
-
-var (
-	NatsAddress = os.Getenv("NATS_ADDRESS")
+	"github.com/joho/godotenv"
 )
 
 func main() {
 
+	errEnv := godotenv.Load()
+	if errEnv != nil {
+		log.Fatal(errEnv)
+	}
+
+	natsAddress := os.Getenv("NATS_ADDRESS")
+
 	hub := NewHub()
 
 	// Conexion con NATS que
-	n, err := events.NewNats("demo.nats.io")
+	n, err := events.NewNats(natsAddress)
 	if err != nil {
 		log.Fatal(err)
 	}

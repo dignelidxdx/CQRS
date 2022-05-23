@@ -14,15 +14,7 @@ import (
 	"github.com/dignelidxdx/repository"
 	"github.com/dignelidxdx/search"
 	"github.com/gorilla/mux"
-)
-
-var (
-	MySQLDB              = os.Getenv("DB_MYSQL_HOST")
-	MySQLUser            = os.Getenv("DB_MYSQL_USERNAME")
-	MySQLPassword        = os.Getenv("DB_MYSQL_PASSWORD")
-	MySQLSchema          = os.Getenv("DB_MYSQL_SCHEMA")
-	NatsAddress          = os.Getenv("NATS_ADDRESS")
-	ElasticSearchAddress = os.Getenv("ELASTICSEARCH_ADDRESS")
+	"github.com/joho/godotenv"
 )
 
 func newRouter() (router *mux.Router) {
@@ -33,9 +25,20 @@ func newRouter() (router *mux.Router) {
 }
 
 func main() {
+	errEnv := godotenv.Load()
+	if errEnv != nil {
+		log.Fatal(errEnv)
+	}
+
+	mySQLDB := os.Getenv("DB_MYSQL_HOST")
+	mySQLUser := os.Getenv("DB_MYSQL_USERNAME")
+	mySQLPassword := os.Getenv("DB_MYSQL_PASSWORD")
+	mySQLSchema := os.Getenv("DB_MYSQL_SCHEMA")
+	natsAddress := os.Getenv("NATS_ADDRESS")
+	elasticSearchAddress := os.Getenv("ELASTICSEARCH_ADDRESS")
 
 	// Conexion con MySQL
-	addr := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", MySQLUser, MySQLPassword, MySQLDB, MySQLSchema)
+	addr := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true", mySQLUser, mySQLPassword, mySQLDB, mySQLSchema)
 
 	repo, err := database.NewMySQLRepository(addr)
 	if err != nil {
@@ -44,7 +47,8 @@ func main() {
 	repository.SetRepository(repo)
 
 	// Conexion con el Document Search o sea ElasticSearch
-	es, err := search.NewElastic(fmt.Sprintf("http://%s", ElasticSearchAddress))
+	es, err := search.NewElastic(fmt.Sprintf("http://%s", elasticSearchAddress))
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,7 +57,7 @@ func main() {
 	defer search.Close()
 
 	// Conexion con NATS. Se subscribe y escucha mensajes
-	n, err := events.NewNats("demo.nats.io")
+	n, err := events.NewNats(natsAddress)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -13,15 +13,8 @@ import (
 	"github.com/dignelidxdx/models"
 	"github.com/dignelidxdx/repository"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"github.com/segmentio/ksuid"
-)
-
-var (
-	MySQLDB       = os.Getenv("DB_MYSQL_HOST")
-	MySQLUser     = os.Getenv("DB_MYSQL_USERNAME")
-	MySQLPassword = os.Getenv("DB_MYSQL_PASSWORD")
-	MySQLSchema   = os.Getenv("DB_MYSQL_SCHEMA")
-	NatsAddress   = os.Getenv("NATS_ADDRESS")
 )
 
 func newRouter() (router *mux.Router) {
@@ -33,8 +26,20 @@ func newRouter() (router *mux.Router) {
 
 func main() {
 
+	errEnv := godotenv.Load()
+	if errEnv != nil {
+		log.Fatal(errEnv)
+	}
+
+	mySQLDB := os.Getenv("DB_MYSQL_HOST")
+	mySQLUser := os.Getenv("DB_MYSQL_USERNAME")
+	mySQLPassword := os.Getenv("DB_MYSQL_PASSWORD")
+	mySQLSchema := os.Getenv("DB_MYSQL_SCHEMA")
+	natsAddress := os.Getenv("NATS_ADDRESS")
+
 	// Conexion con MySQL
-	addr := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", MySQLUser, MySQLPassword, MySQLDB, MySQLSchema)
+	addr := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true", mySQLUser, mySQLPassword, mySQLDB, mySQLSchema)
+	//addr := "root:.14.Digne@tcp(localhost:3306)/alerts_test?parseTime=true"
 
 	repo, err := database.NewMySQLRepository(addr)
 	if err != nil {
@@ -43,7 +48,7 @@ func main() {
 	repository.SetRepository(repo)
 
 	// Conexion con NATS que publica
-	n, err := events.NewNats("demo.nats.io")
+	n, err := events.NewNats(natsAddress)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -90,10 +95,12 @@ func (f FeedEndpoint) CreateFeedHandler(w http.ResponseWriter, r *http.Request) 
 		CreatedAt:   createdAt,
 	}
 
+	// Guarda en la base de datos
 	if err := repository.InsertFeed(r.Context(), &feed); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
+	// Publica mensaje a los que se subscribieron
 	if err := events.PublishCreatedFeed(r.Context(), &feed); err != nil {
 		log.Printf("failed to publish created feed event: %v", err)
 	}

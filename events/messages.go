@@ -13,6 +13,7 @@ type CreatedFeedMessage struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
+// El topico
 func (m CreatedFeedMessage) Type() string {
 	return "created_feed"
 }
